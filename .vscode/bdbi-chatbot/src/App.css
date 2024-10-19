@@ -1,0 +1,59 @@
+.App {
+  text-align: center;
+}
+
+.chat-box {
+  width: 400px;
+  height: 500px;
+  margin: 20px auto;
+  border: 2px solid #ccc;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+}
+
+.messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px;
+}
+
+.message {
+  background-color: #f1f1f1;
+  padding: 10px;
+  margin: 5px 0;
+  border-radius: 10px;
+  text-align: left;
+}
+
+.image-message img {
+  max-width: 100%;
+  border-radius: 10px;
+}
+
+.input-section {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px;
+  border-top: 2px solid #ccc;
+}
+
+input[type="text"] {
+  width: 70%;
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid #ccc;
+}
+
+input[type="file"] {
+  display: none;
+}
+
+button {
+  padding: 10px 20px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+}
