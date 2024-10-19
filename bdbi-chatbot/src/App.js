@@ -41,34 +41,30 @@ function App() {
     setInputImage(null);
   };
 
-  // Simulate API call for text
-  const callTextAPI = async (text) => {
+// API calls to the Flask Server
+const callTextAPI = async (text) => {
     try {
-      const response = await axios.post('https://api.imgur.com/3/upload', { text });
-      return response.data; // Assuming the API returns a useful response
+        const response = await axios.post('http://localhost:5000/upload_text', { text });
+        return response.data.message;
     } catch (error) {
-      console.error(error);
-      return 'Error calling the API';
+        console.error(error);
+        return 'Error calling the Flask API';
     }
-  };
+};
 
-  // Simulate API call for images
-  const callImageAPI = async (image) => {
+const callImageAPI = async (image) => {
     const formData = new FormData();
     formData.append('image', image);
-  
+
     try {
-      const response = await axios.post('https://api.imgur.com/3/upload', formData, {
-        headers: {
-          Authorization: '8c08be70f5cc908',
-        },
-      });
-      return response.data.data.link; // Assuming the API returns an image link
+        const response = await axios.post('http://localhost:5000/upload_image', formData);
+        return response.data.message;
     } catch (error) {
-      console.error(error);
-      return 'Error calling the API';
+        console.error(error);
+        return 'Error calling the Flask API';
     }
-  };
+};
+
 
   return (
     <div className="App">
