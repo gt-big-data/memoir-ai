@@ -60,7 +60,7 @@ function App() {
     try {
       const response = await axios.post('https://api.imgur.com/3/upload', formData, {
         headers: {
-          Authorization: '7a993eec3ef364a',
+          Authorization: '8c08be70f5cc908',
         },
       });
       return response.data.data.link; // Assuming the API returns an image link
