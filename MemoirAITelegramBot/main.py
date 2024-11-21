@@ -4,8 +4,6 @@ from typing import Final
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes, CallbackContext
 import requests
-from io import BytesIO
-import re
 
 load_dotenv()
 
@@ -13,10 +11,6 @@ imgur_client_id = os.getenv('IMGUR_CLIENT_ID')
 imgur_client_secret = os.getenv('IMGUR_CLIENT_SECRET')
 TOKEN = os.getenv('TOKEN')
 BOT_USERNAME: Final = "@MemoirAIBot"
-
-#create directory for stored images in local machine
-IMAGE_DIRECTORY = "downloaded_images"
-os.makedirs(IMAGE_DIRECTORY, exist_ok=True)
 
 # Commands
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -55,9 +49,9 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     print(f'User ({update.message.chat.id}) in {message_type}: "{text}"')
 
-    if 'imgur.com' in text:
-        imgur_link = text.strip()
-        await update.message.reply_text('Processing your Imgur link...')
+    if any(tag in text.strip() for tag in ['.png', '.jpg', '.jpeg', '.gif', '.webp', '.HEIC']):
+        path: str = text.strip()
+        response = handle_file_path(path)
 
     if message_type == "group":
         if BOT_USERNAME in text:
@@ -71,34 +65,44 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     print("Bot:", response)
     await update.message.reply_text(response)
 
-#upload user inputted images to a local directory called downloaded_images in local machine
-async def handle_images(update: Update, context: CallbackContext) -> None:
-    paths = []
-    for photo in update.message.photo:
+async def handle_image(update: Update, context: CallbackContext) -> None:
+    photo_file = await update.message.photo[-1].get_file()
 
-        highest_res_photo = update.message.photo[-1]
-        photo_file = await highest_res_photo.get_file()
+    photo_bytes = await photo_file.download_as_bytearray()
 
+    imgur_link = upload_to_imgur(photo_bytes)
 
-        local_path = os.path.join(IMAGE_DIRECTORY, f"{update.message.chat.id}_{photo_file.file_unique_id}.jpg")
-        await photo_file.download_to_drive(local_path)
-        paths.append(local_path)
-
-
-    if paths:
-        await update.message.reply_text("Images stored! Here are the paths:\n" + "\n".join(paths))
-    else:
-        await update.message.reply_text("No images were processed.")
-
-
-app.add_handler(MessageHandler(filters.PHOTO, handle_images))
-
-
+    await update.message.reply_text(f"Image uploaded! Here is your link: {imgur_link}")
 
 async def error(update: Update, context: ContextTypes.DEFAULT_TYPE):
     print(f"Update {update} caused error {context.error}")
 
 
+async def handle_file_path(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = update.message.chat.id
+    text = update.message.text.strip()
+
+    file_paths = text.strip().split(',')
+    print(file_paths)
+    returned = False
+    
+    for file_path in file_paths:
+        if not os.path.exists(file_path.strip()):
+            await context.bot.send_message(chat_id=user_id, text="The file does not exist.")
+            return
+        
+        try:
+            with open(file_path.strip(), 'rb') as file:
+                await context.bot.send_photo(chat_id=user_id, photo=file)
+            returned = True
+        except Exception as e:
+            await context.bot.send_message(chat_id=user_id, text=f"Error: {e}")
+
+    if returned:
+        if len(file_paths) == 1:
+            await context.bot.send_message(chat_id=user_id, text="Image successfully retrieved!")
+        else:
+            await context.bot.send_message(chat_id=user_id, text="Images successfully retrieved!")
 
 # Helper Methods
 def upload_to_imgur(image_file: bytes) -> str:
@@ -120,6 +124,7 @@ if __name__ == "__main__":
     app.add_handler(CommandHandler("start", start_command))
     app.add_handler(CommandHandler("help", help_command))
     app.add_handler(CommandHandler("custom", custom_command))
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_file_path))
 
     # Messages
     app.add_handler(MessageHandler(filters.TEXT, handle_message))
