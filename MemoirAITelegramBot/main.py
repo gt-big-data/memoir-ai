@@ -53,8 +53,8 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     print(f'User ({update.message.chat.id}) in {message_type}: "{text}"')
 
     if any(tag in text.strip() for tag in ['.png', '.jpg', '.jpeg', '.gif', '.webp', '.HEIC']):
-        path: str = text.strip()
-        response = handle_file_path(path)
+        await handle_file_path(update, context)
+        return
 
     if message_type == "group":
         if BOT_USERNAME in text:
