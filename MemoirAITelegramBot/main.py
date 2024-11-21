@@ -121,11 +121,11 @@ if __name__ == "__main__":
     app.add_handler(CommandHandler("start", start_command))
     app.add_handler(CommandHandler("help", help_command))
     app.add_handler(CommandHandler("custom", custom_command))
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_file_path))
 
     # Messages
     app.add_handler(MessageHandler(filters.TEXT, handle_message))
     app.add_handler(MessageHandler(filters.PHOTO, handle_images))
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_file_path))
 
     # Errors
     app.add_error_handler(error)
