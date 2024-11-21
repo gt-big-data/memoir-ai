@@ -12,6 +12,9 @@ imgur_client_secret = os.getenv('IMGUR_CLIENT_SECRET')
 TOKEN = os.getenv('TOKEN')
 BOT_USERNAME: Final = "@MemoirAIBot"
 
+IMAGE_DIRECTORY = "downloaded_images"
+os.makedirs(IMAGE_DIRECTORY, exist_ok=True)
+
 # Commands
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Hello and thank you for using MemoirAI, how may I assist you?")
@@ -65,14 +68,19 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     print("Bot:", response)
     await update.message.reply_text(response)
 
-async def handle_image(update: Update, context: CallbackContext) -> None:
-    photo_file = await update.message.photo[-1].get_file()
-
-    photo_bytes = await photo_file.download_as_bytearray()
-
-    imgur_link = upload_to_imgur(photo_bytes)
-
-    await update.message.reply_text(f"Image uploaded! Here is your link: {imgur_link}")
+#upload user inputted images to a local directory called downloaded_images in local machine
+async def handle_images(update: Update, context: CallbackContext) -> None:
+    paths = []
+    for photo in update.message.photo:
+        highest_res_photo = update.message.photo[-1]
+        photo_file = await highest_res_photo.get_file()
+        local_path = os.path.join(IMAGE_DIRECTORY, f"{update.message.chat.id}_{photo_file.file_unique_id}.jpg")
+        await photo_file.download_to_drive(local_path)
+        paths.append(local_path)
+    if paths:
+        await update.message.reply_text("Images stored! Here are the paths:\n" + "\n".join(paths))
+    else:
+        await update.message.reply_text("No images were processed.")
 
 async def error(update: Update, context: ContextTypes.DEFAULT_TYPE):
     print(f"Update {update} caused error {context.error}")
@@ -104,17 +112,6 @@ async def handle_file_path(update: Update, context: ContextTypes.DEFAULT_TYPE):
         else:
             await context.bot.send_message(chat_id=user_id, text="Images successfully retrieved!")
 
-# Helper Methods
-def upload_to_imgur(image_file: bytes) -> str:
-    headers = {"Authorization": f"Client-ID {imgur_client_id}"}
-    response = requests.post('https://api.imgur.com/3/image', headers=headers, files={"image": image_file})
-    
-    if response.status_code == 200:
-        return response.json()["data"]["link"]
-    else:
-        return "Failed to upload image."
-    
-
 
 if __name__ == "__main__":
     print("Starting bot...")
@@ -128,7 +125,7 @@ if __name__ == "__main__":
 
     # Messages
     app.add_handler(MessageHandler(filters.TEXT, handle_message))
-    app.add_handler(MessageHandler(filters.PHOTO, handle_image))
+    app.add_handler(MessageHandler(filters.PHOTO, handle_images))
 
     # Errors
     app.add_error_handler(error)
